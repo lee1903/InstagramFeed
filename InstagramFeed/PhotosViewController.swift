@@ -36,7 +36,7 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
                     if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
                         data, options:[]) as? NSDictionary {
                             NSLog("response: \(responseDictionary)")
-                            self.feed = responseDictionary["data"] as! [NSDictionary]
+                            self.feed = responseDictionary["data"] as? [NSDictionary]
                             self.instaTableView.reloadData()
                     }
                 }
@@ -48,18 +48,49 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         // Do any additional setup after loading the view, typically from a nib.
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let feed = feed {
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        if let feed = feed{
             return feed.count
-        } else {
+        }else{
             return 0
         }
+    }
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
+    }
+    
+    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        headerView.backgroundColor = UIColor(white: 1, alpha: 0.9)
+        
+        //let username = UILabel(frame: CGRect(x: 30, y: 10, width: 300, height: 30))
+        
+        let profileView = UIImageView(frame: CGRect(x: 10, y: 10, width: 30, height: 30))
+        profileView.clipsToBounds = true
+        profileView.layer.cornerRadius = 15;
+        profileView.layer.borderColor = UIColor(white: 0.7, alpha: 0.8).CGColor
+        profileView.layer.borderWidth = 1;
+        
+        // Use the section number to get the right URL
+        // profileView.setImageWithURL(...)
+        
+        headerView.addSubview(profileView)
+        headerView.addSubview(username)
+        
+        // Add a UILabel for the username here
+        
+        return headerView
+    }
+    
+    func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 30
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = instaTableView.dequeueReusableCellWithIdentifier("PhotosCell", forIndexPath: indexPath) as! PhotosCell
         
-        let post = feed![indexPath.row]
+        let post = feed![indexPath.section]
         let images = post["images"] as! NSDictionary
         let stdRes = images["standard_resolution"] as! NSDictionary
         
@@ -70,6 +101,30 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         
         return cell
     }
+    
+    
+//    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+//        if let feed = feed {
+//            return feed.count
+//        } else {
+//            return 0
+//        }
+//    }
+//    
+//    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+//        let cell = instaTableView.dequeueReusableCellWithIdentifier("PhotosCell", forIndexPath: indexPath) as! PhotosCell
+//        
+//        let post = feed![indexPath.row]
+//        let images = post["images"] as! NSDictionary
+//        let stdRes = images["standard_resolution"] as! NSDictionary
+//        
+//        let imageUrl = stdRes["url"] as! String
+//        let url = NSURL(string: imageUrl)
+//        
+//        cell.photoImageView.setImageWithURL(url!)
+//        
+//        return cell
+//    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
