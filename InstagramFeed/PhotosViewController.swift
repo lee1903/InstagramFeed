@@ -76,7 +76,7 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         // profileView.setImageWithURL(...)
         
         headerView.addSubview(profileView)
-        headerView.addSubview(username)
+        //headerView.addSubview(username)
         
         // Add a UILabel for the username here
         
