@@ -102,6 +102,24 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         return cell
     }
     
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        instaTableView.deselectRowAtIndexPath(indexPath, animated: true)
+    }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        let vc = segue.destinationViewController as! PhotoDetailsViewController
+        let indexPath = instaTableView.indexPathForCell(sender as! UITableViewCell)
+        
+        let cell = feed![(indexPath?.section)!]
+        let images = cell["images"] as! NSDictionary
+        let stdRes = images["standard_resolution"] as! NSDictionary
+        
+        let imageUrl = stdRes["url"] as! String
+        
+        vc.imageURL = imageUrl
+        
+    }
+    
     
 //    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 //        if let feed = feed {
