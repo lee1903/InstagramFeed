@@ -9,11 +9,13 @@
 import UIKit
 import AFNetworking
 
-class PhotosViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class PhotosViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UIScrollViewDelegate {
     
     @IBOutlet weak var instaTableView: UITableView!
     
     var feed: [NSDictionary]?
+    var isMoreDataLoading = false
+    var loadingMoreView:InfiniteScrollActivityView?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,7 +47,81 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         
         instaTableView.rowHeight = 320;
         
+        // Set up Infinite Scroll loading indicator
+        let frame = CGRectMake(0, instaTableView.contentSize.height, instaTableView.bounds.size.width, InfiniteScrollActivityView.defaultHeight)
+        loadingMoreView = InfiniteScrollActivityView(frame: frame)
+        loadingMoreView!.hidden = true
+        instaTableView.addSubview(loadingMoreView!)
+        
+        var insets = instaTableView.contentInset;
+        insets.bottom += InfiniteScrollActivityView.defaultHeight;
+        instaTableView.contentInset = insets
+        
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    
+    func scrollViewDidScroll(scrollView: UIScrollView) {
+        if (!isMoreDataLoading) {
+            // Calculate the position of one screen length before the bottom of the results
+            let scrollViewContentHeight = instaTableView.contentSize.height
+            let scrollOffsetThreshold = scrollViewContentHeight - instaTableView.bounds.size.height
+            
+            // When the user has scrolled past the threshold, start requesting
+            if(scrollView.contentOffset.y > scrollOffsetThreshold && instaTableView.dragging) {
+                isMoreDataLoading = true
+                
+                // Update position of loadingMoreView, and start loading indicator
+                let frame = CGRectMake(0, instaTableView.contentSize.height, instaTableView.bounds.size.width, InfiniteScrollActivityView.defaultHeight)
+                loadingMoreView?.frame = frame
+                loadingMoreView!.startAnimating()
+                
+                // ... Code to load more results ...
+                loadMoreData()
+            }
+        }
+    }
+    
+    func loadMoreData() {
+        
+        // ... Create the NSURLRequest (myRequest) ...
+        let clientId = "e05c462ebd86446ea48a5af73769b602"
+        let url = NSURL(string:"https://api.instagram.com/v1/media/popular?client_id=\(clientId)")
+        let request = NSURLRequest(URL: url!)
+        
+        
+        // Configure session so that completion handler is executed on main UI thread
+        let session = NSURLSession(
+            configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
+            delegate:nil,
+            delegateQueue:NSOperationQueue.mainQueue()
+        )
+        
+        let task : NSURLSessionDataTask = session.dataTaskWithRequest(request,
+            completionHandler: { (data, response, error) in
+                
+                // Update flag
+                self.isMoreDataLoading = false
+                
+                // Stop the loading indicator
+                self.loadingMoreView!.stopAnimating()
+                
+                // ... Use the new data to update the data source ...
+                if let data = data {
+                    if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
+                        data, options:[]) as? NSDictionary {
+                            NSLog("response: \(responseDictionary)")
+                            let newData = responseDictionary["data"] as? [NSDictionary]
+                            if let newData = newData {
+                                self.feed?.appendContentsOf(newData)
+                            }
+                            self.instaTableView.reloadData()
+                    }
+                }
+                
+                // Reload the tableView now that there is new data
+                self.instaTableView.reloadData()
+        });
+        task.resume()
     }
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
